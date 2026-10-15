@@ -5,11 +5,12 @@
 ## 1. 在幽兰本地构建方法
 ./build.sh
 
-## 2. 在幽兰闪测试方法
+## 2. 在幽兰上直接测试
 
-更新uboot，直接将当前目录的uboot.img 传过去执行 
+更新uboot，直接将当前目录的uboot.img dd到幽兰的NOR闪存即可： 
 
 dd of=/dev/mtdblock0 if=uboot.img bs=512 seek=4096
+或者使用目录下的uu.sh
 
 如有任何问题，请在兰舍群提问和讨论！
 非幽兰用户，请访问幽兰官网获取更多信息。
