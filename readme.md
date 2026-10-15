@@ -12,5 +12,7 @@
 dd of=/dev/mtdblock0 if=uboot.img bs=512 seek=4096
 
 如有任何问题，请在兰舍群提问和讨论！
+非幽兰用户，请访问幽兰官网获取更多信息。
+https://nanocode.cn/#/yl/index
 
 2026.10.15
