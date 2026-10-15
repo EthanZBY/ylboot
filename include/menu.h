@@ -20,5 +20,6 @@ int menu_destroy(struct menu *m);
 void menu_display_statusline(struct menu *m);
 int menu_default_choice(struct menu *m, void **choice);
 int menu_show(int bootdelay);
+void osl_countdown_input(void);	/* common/osl.c, round 3c */
 
 #endif /* __MENU_H__ */

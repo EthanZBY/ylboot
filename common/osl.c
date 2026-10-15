@@ -6,6 +6,7 @@
 #include <linux/errno.h>
 #include "osl.h"
 #include "ndb.h"
+#include <menu.h>	/* round 3c: the prototypes of menu_show() and osl_countdown_input() */
 #include "boot_rkimg.h"
 #include <asm/arch/boot_mode.h>
 #include "efi_loader.h"
@@ -1026,6 +1027,22 @@ static int osl_file_d4d_menu(osl_mgr* om)
 	return 0;
 }
 
+/*
+ * round 3c: before the autoboot countdown, power the laptop keyboard, start USB once (no usb reset here, a repeated
+ * usb reset panicked this U-Boot) and turn the screen console on, so Esc works from the keyboard as well as from
+ * serial and the countdown shows on the panel.
+ */
+void osl_countdown_input(void)
+{
+	run_command("gpio set 112", 0); // KEY_PWREN GPIO3_C0
+	ndb_enable_lcd("countdown", 0);
+	run_command("usb start", 0);
+	if (gd->flags & GD_FLG_USBKBD_REGISTERED)
+		env_set("stdin", "serial,usbkbd");
+	else
+		puts("osl: no USB keyboard yet, Esc works from serial\n");
+}
+
 // prepare and show boot menu 
 static int osl_show_bootmenu(osl_mgr* om, int bootdelay)
 {
@@ -1050,7 +1067,8 @@ static int osl_show_bootmenu(osl_mgr* om, int bootdelay)
 	run_command("usb start", 0);
 	osl_file_menu(om, "usb", "0:1");
 
-	while ( (gd->flags & GD_FLG_USBKBD_REGISTERED) == 0 && max_usbkbd_retries++ < 10) {
+	// round 3c: at most one usb reset (was 10); a repeated usb reset panicked this U-Boot on 2026-10-09
+	while ( (gd->flags & GD_FLG_USBKBD_REGISTERED) == 0 && max_usbkbd_retries++ < 1) {
 		run_command("usb reset", 0);
 	}
 	if((gd->flags & GD_FLG_USBKBD_REGISTERED) == 0) {
