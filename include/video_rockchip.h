@@ -26,5 +26,7 @@ int update_show_bmp(const char *bmp,unsigned char *dat);
 int rockchip_show_bmp(const char *bmp);
 int rockchip_show_logo(void);
 void rockchip_display_fixup(void *blob);
+int rockchip_display_fb_handed_over(const void *blob);
+void rockchip_display_console_off(void);
 
 #endif

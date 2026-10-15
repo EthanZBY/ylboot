@@ -56,7 +56,7 @@ CONFIG_SYS_PROMPT="ulan# "
 CONFIG_AUTOBOOT_KEYED=y
 CONFIG_AUTOBOOT_DELAY_STR="11"
 CONFIG_AUTOBOOT_STOP_STR="11"
-CONFIG_AUTOBOOT_PROMPT="Autoboot in %d seconds (Esc: boot menu)\n"
+CONFIG_AUTOBOOT_PROMPT="Autoboot in %d seconds (Esc: boot menu, 11: console)\n"
 # CONFIG_FASTBOOT is not set
 CONFIG_CMD_BOOTZ=y
 CONFIG_CMD_DTIMG=y

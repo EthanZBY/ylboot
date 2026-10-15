@@ -48,6 +48,13 @@ void console_record_reset_enable(void);
 void console_record_print_purge(void);
 
 /**
+ * console_show_early_log() - draw what U-Boot printed before its screen console came on (round 3d)
+ *
+ * Once per boot, on the non-serial stdout devices only; called by ndb_enable_lcd().
+ */
+void console_show_early_log(void);
+
+/**
  * console_announce_r() - print a U-Boot console on non-serial consoles
  *
  * When U-Boot starts up with a display it generally does not announce itself

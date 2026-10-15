@@ -513,10 +513,59 @@ static inline void pre_console_putc(const char c) {}
 static inline void print_pre_console_buffer(int flushpoint) {}
 #endif
 
+#ifndef CONFIG_SPL_BUILD
+/*
+ * round 3d: a copy of what U-Boot prints, from its first line until the screen console comes on
+ * (GD_FLG_SERIAL_READY, see ndb_enable_lcd()), which then draws it, so the screen shows the same text as serial.
+ * In .data, not .bss: it is written before relocation, and relocation copies .data. 16 KiB is 2.5 times the 6.4 KB
+ * a normal boot prints (2026-10-13); if it fills, the copy stops there.
+ */
+#define EARLY_LOG_SIZE	(16 * 1024)
+static char early_log[EARLY_LOG_SIZE] __attribute__((section(".data")));
+static int early_log_len __attribute__((section(".data")));
+static int early_log_shown __attribute__((section(".data")));
+
+static inline void early_log_putc(const char c)
+{
+	if (!early_log_shown && !(gd->flags & GD_FLG_SERIAL_READY) && early_log_len < EARLY_LOG_SIZE)
+		early_log[early_log_len++] = c;
+}
+
+/* Draw the copy once, on the screen devices only (serial has it), one screen update per line. */
+void console_show_early_log(void)
+{
+	char line[256];
+	int i, len = 0;
+
+	if (early_log_shown || !(gd->flags & GD_FLG_DEVINIT))
+		return;
+	early_log_shown = 1;
+
+	/* clear the screen and home the cursor: console_announce_r() drew the banner there earlier */
+	console_puts_noserial(stdout, "\x1b[2J");
+	for (i = 0; i < early_log_len; i++) {
+		line[len++] = early_log[i];
+		if (line[len - 1] == '\n' || len == sizeof(line) - 1) {
+			line[len] = '\0';
+			console_puts_noserial(stdout, line);
+			len = 0;
+		}
+	}
+	if (len) {
+		line[len] = '\0';
+		console_puts_noserial(stdout, line);
+	}
+}
+#else
+static inline void early_log_putc(const char c) {}
+#endif
+
 void putc(const char c)
 {
 	if (!gd || gd->flags & GD_FLG_DISABLE_CONSOLE)
 		return;
+
+	early_log_putc(c);
 
 #ifdef CONFIG_DEBUG_UART
 	/* if we don't have a console yet, use the debug UART */

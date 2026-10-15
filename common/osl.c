@@ -1031,10 +1031,13 @@ static int osl_file_d4d_menu(osl_mgr* om)
  * round 3c: before the autoboot countdown, power the laptop keyboard, start USB once (no usb reset here, a repeated
  * usb reset panicked this U-Boot) and turn the screen console on, so Esc works from the keyboard as well as from
  * serial and the countdown shows on the panel.
+ * round 3d: the boot logo stays 1 s before the screen console takes over (the operator: "show logo for 1s is already
+ * enough"); the keyboard gets that second to power up before usb start.
  */
 void osl_countdown_input(void)
 {
 	run_command("gpio set 112", 0); // KEY_PWREN GPIO3_C0
+	mdelay(1000);
 	ndb_enable_lcd("countdown", 0);
 	run_command("usb start", 0);
 	if (gd->flags & GD_FLG_USBKBD_REGISTERED)

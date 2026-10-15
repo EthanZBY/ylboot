@@ -542,20 +542,10 @@ void arch_preboot_os(uint32_t bootm_state, bootm_headers_t *images)
 	if (!(bootm_state & BOOTM_STATE_OS_PREP))
 		return;
 
-#ifdef CONFIG_DRM_ROCKCHIP
 	/*
-	 * added 2026-10-11: the boot menu (ndb_enable_lcd() in common/osl.c) turns the LCD console on through
-	 * GD_FLG_SERIAL_READY, and the VOP2 Esmart2 window keeps scanning the console framebuffer into the
-	 * kernel, which floods with POST_BUF_EMPTY and IOMMU faults. Do what the proven manual fix does at the
-	 * prompt (coninfo x; mw.l 0xfdd91c10 0; mw.l 0xfdd90000 0x48004) before the device tree is fixed up.
+	 * The LCD console switch-off added here on 2026-10-11 (round 2) moved in round 3d to rockchip_display_fixup(),
+	 * which hands the console framebuffer to the kernel when it can, with a last check in board_quiesce_devices().
 	 */
-	if (gd->flags & GD_FLG_SERIAL_READY) {
-		gd->flags &= ~GD_FLG_SERIAL_READY;	/* coninfo x: LCD console off, serial output continues */
-		writel(0, 0xfdd91c10);			/* mw.l 0xfdd91c10 0: Esmart2 window off */
-		writel(0x48004, 0xfdd90000);		/* mw.l 0xfdd90000 0x48004: VOP2 config done */
-		printf("LCD console off before the kernel: Esmart2 ctrl %08x\n", readl(0xfdd91c10));
-	}
-#endif
 
 #ifdef CONFIG_ARM64
 	u8 *data = (void *)images->ep;
@@ -999,6 +989,19 @@ void board_quiesce_devices(void *images)
 	bootm_headers_t *bootm_images = (bootm_headers_t *)images;
 	ulong kernel_addr;
 
+#ifdef CONFIG_DRM_ROCKCHIP
+	/*
+	 * round 3d, the last check, before cleanup_before_linux() turns the MMU off: stop drawing on the screen. The
+	 * window keeps scanning the console framebuffer only when the booted device tree hands it to the kernel;
+	 * otherwise it goes off, as round 2 did.
+	 */
+	if (gd->flags & GD_FLG_SERIAL_READY) {
+		if (rockchip_display_fb_handed_over(bootm_images->ft_addr))
+			gd->flags &= ~GD_FLG_SERIAL_READY;
+		else
+			rockchip_display_console_off();
+	}
+#endif
 #ifdef CONFIG_ROCKCHIP_PRELOADER_ATAGS
 	/* Destroy atags makes next warm boot safer */
 	atags_destroy();

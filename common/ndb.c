@@ -1,5 +1,6 @@
 #ifndef CONFIG_SANDBOX
 #include <common.h>
+#include <console.h>
 #include <asm-generic/gpio.h>
 #include <asm/io.h>
 #include <version.h>
@@ -56,6 +57,7 @@ static int ndb_check_sdmmc_cd_via_gpio(void)
 void ndb_enable_lcd(const char* msg, int errcode)
 {
 	if(0 == (gd->flags & GD_FLG_SERIAL_READY)) {
+		console_show_early_log(); // round 3d: first what U-Boot printed so far, on the screen only
 		gd->flags |= GD_FLG_SERIAL_READY; // turn on local display via a bug of u-boot, see putc in console.c
 		printf("Hi geuder, local console is enabled for %s (err %d).\n", msg, errcode);
 	} else {
