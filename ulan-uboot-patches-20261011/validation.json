@@ -1,0 +1,15 @@
+{
+  "checked_at_utc": "2026-10-11T14:09:22.191780+00:00",
+  "scope": "12 affected files extracted directly from the verified original archive; no firmware writes",
+  "archive_sha256_matches": true,
+  "series_gnu_patch_fuzz_zero_apply_and_reverse": true,
+  "series_git_apply_and_reverse": true,
+  "combined_gnu_patch_fuzz_zero_apply_and_reverse": true,
+  "combined_git_apply_and_reverse": true,
+  "assr_only_applies_directly_to_original_archive": true,
+  "applied_source_equals_b3_12_files": true,
+  "reversed_source_equals_original_12_files": true,
+  "whitespace_error_all": "passed",
+  "source_unchanged_during_export": true,
+  "fresh_build": "not run: patch export reuses the existing validated source without code changes"
+}

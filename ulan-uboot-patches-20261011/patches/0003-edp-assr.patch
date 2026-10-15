@@ -1,0 +1,181 @@
+--- a/drivers/video/drm/analogix_dp.c
++++ b/drivers/video/drm/analogix_dp.c
+@@ -92,6 +92,42 @@
+ 				       DP_TRAINING_PATTERN_DISABLE);
+ }
+ 
++/* Backport Rockchip fc275078 and the 4e1a12d disable-address fix.
++ * The local AUX helpers return zero on success. Capabilities were read by
++ * analogix_dp_connector_enable() before entering link training.
++ */
++static int analogix_dp_set_assr_mode(struct analogix_dp_device *dp)
++{
++	u8 cap = dp->dpcd[DP_EDP_CONFIGURATION_CAP];
++	u8 before, target, sink;
++	bool enable = !!(cap & DP_ALTERNATE_SCRAMBLER_RESET_CAP);
++	int ret;
++
++	ret = analogix_dp_read_byte_from_dpcd(dp, DP_EDP_CONFIGURATION_SET,
++					  &before);
++	if (ret)
++		return ret;
++
++	target = before & ~DP_ALTERNATE_SCRAMBLER_RESET_ENABLE;
++	if (enable)
++		target |= DP_ALTERNATE_SCRAMBLER_RESET_ENABLE;
++	ret = analogix_dp_write_byte_to_dpcd(dp, DP_EDP_CONFIGURATION_SET,
++					   target);
++	if (ret)
++		return ret;
++
++	ret = analogix_dp_read_byte_from_dpcd(dp, DP_EDP_CONFIGURATION_SET,
++					  &sink);
++	if (ret)
++		return ret;
++	printf("eDP%d ASSR sink: cap=0x%02x before=0x%02x target=0x%02x read=0x%02x\n",
++	       dp->id, cap, before, target, sink);
++	if ((sink ^ target) & DP_ALTERNATE_SCRAMBLER_RESET_ENABLE)
++		return -EIO;
++
++	return analogix_dp_enable_assr_mode(dp, enable);
++}
++
+ static int analogix_dp_link_start(struct analogix_dp_device *dp)
+ {
+ 	u8 buf[4];
+@@ -123,6 +159,12 @@
+ 						 2, buf);
+ 	if (retval < 0)
+ 		return retval;
++
++	retval = analogix_dp_set_assr_mode(dp);
++	if (retval) {
++		dev_err(dp->dev, "failed to set ASSR mode: %d\n", retval);
++		return retval;
++	}
+ 
+ 	/* Set TX voltage-swing and pre-emphasis to minimum */
+ 	for (lane = 0; lane < lane_count; lane++)
+@@ -532,6 +574,9 @@
+ {
+ 	int timeout_loop = 0;
+ 	int done_count = 0;
++	u32 policy;
++	bool assr = !!(dp->dpcd[DP_EDP_CONFIGURATION_CAP] &
++		       DP_ALTERNATE_SCRAMBLER_RESET_CAP);
+ 
+ 	analogix_dp_config_video_slave_mode(dp);
+ 
+@@ -567,6 +612,11 @@
+ 	analogix_dp_enable_video_master(dp, 0);
+ 
+ 	/* Enable video input */
++	policy = readl(dp->reg_base + ANALOGIX_DP_LINK_POLICY);
++	printf("eDP%d ASSR video: policy=0x%08x expected=%u\n",
++	       dp->id, policy, assr);
++	if (!!(policy & ALTERNATE_SR_ENABLE) != assr)
++		return -EIO;
+ 	analogix_dp_start_video(dp);
+ 
+ 	timeout_loop = 0;
+--- a/drivers/video/drm/analogix_dp.h
++++ b/drivers/video/drm/analogix_dp.h
+@@ -104,6 +104,9 @@
+ #define ANALOGIX_DP_BUF_DATA_0			0x7C0
+ 
+ #define ANALOGIX_DP_SOC_GENERAL_CTL		0x800
++
++#define ANALOGIX_DP_LINK_POLICY			0x9D8
++#define ALTERNATE_SR_ENABLE			BIT(7)
+ 
+ /* ANALOGIX_DP_TX_SW_RESET */
+ #define RESET_DP_TX				(0x1 << 0)
+@@ -622,6 +625,7 @@
+ 				      bool enable);
+ void analogix_dp_set_training_pattern(struct analogix_dp_device *dp,
+ 				      enum pattern_set pattern);
++int analogix_dp_enable_assr_mode(struct analogix_dp_device *dp, bool enable);
+ void analogix_dp_set_lane_link_training(struct analogix_dp_device *dp);
+ u32 analogix_dp_get_lane_link_training(struct analogix_dp_device *dp, u8 lane);
+ void analogix_dp_reset_macro(struct analogix_dp_device *dp);
+--- a/drivers/video/drm/analogix_dp_reg.c
++++ b/drivers/video/drm/analogix_dp_reg.c
+@@ -46,6 +46,22 @@
+ 	readl(dp->reg_base + reg);
+ 
+ 	return readl(dp->reg_base + reg);
++}
++
++int analogix_dp_enable_assr_mode(struct analogix_dp_device *dp, bool enable)
++{
++	u32 before = analogix_dp_read(dp, ANALOGIX_DP_LINK_POLICY);
++	u32 value = before & ~ALTERNATE_SR_ENABLE;
++	u32 after;
++
++	if (enable)
++		value |= ALTERNATE_SR_ENABLE;
++	analogix_dp_write(dp, ANALOGIX_DP_LINK_POLICY, value);
++	after = analogix_dp_read(dp, ANALOGIX_DP_LINK_POLICY);
++	printf("eDP%d ASSR TX: before=0x%08x target=0x%08x read=0x%08x\n",
++	       dp->id, before, value, after);
++
++	return ((after ^ value) & ALTERNATE_SR_ENABLE) ? -EIO : 0;
+ }
+ 
+ void analogix_dp_enable_video_mute(struct analogix_dp_device *dp, bool enable)
+--- a/drivers/video/drm/rockchip_display.c
++++ b/drivers/video/drm/rockchip_display.c
+@@ -982,6 +982,7 @@
+ 	const struct rockchip_crtc *crtc = crtc_state->crtc;
+ 	const struct rockchip_crtc_funcs *crtc_funcs = crtc->funcs;
+ 	struct panel_state *panel_state = &state->panel_state;
++	int ret;
+ 
+ 	if (!state->is_init)
+ 		return -EINVAL;
+@@ -1004,8 +1005,27 @@
+ 	if (crtc_funcs->enable)
+ 		crtc_funcs->enable(state);
+ 
+-	if (conn_funcs->enable)
+-		conn_funcs->enable(state);
++	if (conn_funcs->enable) {
++		ret = conn_funcs->enable(state);
++		if (ret) {
++			printf("%s: display enable failed: %d\n",
++			       conn_state->dev->name, ret);
++			/* The connector can have enabled hardware before failing. */
++			if (conn_funcs->disable)
++				conn_funcs->disable(state);
++			if (crtc_funcs->enable && crtc_funcs->disable)
++				crtc_funcs->disable(state);
++			if (panel_state->panel)
++				rockchip_panel_unprepare(panel_state->panel);
++			if (conn_state->bridge)
++				rockchip_bridge_post_disable(conn_state->bridge);
++			if (conn_funcs->prepare && conn_funcs->unprepare)
++				conn_funcs->unprepare(state);
++			if (crtc_funcs->prepare && crtc_funcs->unprepare)
++				crtc_funcs->unprepare(state);
++			return ret;
++		}
++	}
+ 
+ 	if (conn_state->bridge)
+ 		rockchip_bridge_enable(conn_state->bridge);
+@@ -1121,10 +1141,11 @@
+ 		}
+ 	}
+ 
+-	display_set_plane(state);
+-	display_enable(state);
+-
+-	return 0;
++	ret = display_set_plane(state);
++	if (ret)
++		return ret;
++
++	return display_enable(state);
+ }
+ 
+ static int get_crtc_id(ofnode connect, bool is_ports_node)

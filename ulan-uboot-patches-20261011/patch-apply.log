@@ -1,0 +1,189 @@
+$ patch --batch --forward --fuzz=0 --dry-run -p1 -i patch-package/patches/0001-build-adaptation.patch
+checking file Makefile
+checking file make.sh
+checking file arch/arm/mach-rockchip/decode_bl31.py
+checking file drivers/usb/host/xhci-dwc3.c
+exit_code=0
+
+$ patch --batch --forward --fuzz=0 -p1 -i patch-package/patches/0001-build-adaptation.patch
+patching file Makefile
+patching file make.sh
+patching file arch/arm/mach-rockchip/decode_bl31.py
+patching file drivers/usb/host/xhci-dwc3.c
+exit_code=0
+
+$ patch --batch --forward --fuzz=0 --dry-run -p1 -i patch-package/patches/0002-boot-compatibility.patch
+checking file include/configs/evb_rk3588.h
+checking file configs/rk3588-yourland_defconfig
+checking file common/osl.c
+checking file drivers/core/of_access.c
+exit_code=0
+
+$ patch --batch --forward --fuzz=0 -p1 -i patch-package/patches/0002-boot-compatibility.patch
+patching file include/configs/evb_rk3588.h
+patching file configs/rk3588-yourland_defconfig
+patching file common/osl.c
+patching file drivers/core/of_access.c
+exit_code=0
+
+$ patch --batch --forward --fuzz=0 --dry-run -p1 -i patch-package/patches/0003-edp-assr.patch
+checking file drivers/video/drm/analogix_dp.c
+checking file drivers/video/drm/analogix_dp.h
+checking file drivers/video/drm/analogix_dp_reg.c
+checking file drivers/video/drm/rockchip_display.c
+exit_code=0
+
+$ patch --batch --forward --fuzz=0 -p1 -i patch-package/patches/0003-edp-assr.patch
+patching file drivers/video/drm/analogix_dp.c
+patching file drivers/video/drm/analogix_dp.h
+patching file drivers/video/drm/analogix_dp_reg.c
+patching file drivers/video/drm/rockchip_display.c
+exit_code=0
+
+$ patch --batch --fuzz=0 -R -p1 -i patch-package/patches/0003-edp-assr.patch
+patching file drivers/video/drm/analogix_dp.c
+patching file drivers/video/drm/analogix_dp.h
+patching file drivers/video/drm/analogix_dp_reg.c
+patching file drivers/video/drm/rockchip_display.c
+exit_code=0
+
+$ patch --batch --fuzz=0 -R -p1 -i patch-package/patches/0002-boot-compatibility.patch
+patching file include/configs/evb_rk3588.h
+patching file configs/rk3588-yourland_defconfig
+patching file common/osl.c
+patching file drivers/core/of_access.c
+exit_code=0
+
+$ patch --batch --fuzz=0 -R -p1 -i patch-package/patches/0001-build-adaptation.patch
+patching file Makefile
+patching file make.sh
+patching file arch/arm/mach-rockchip/decode_bl31.py
+patching file drivers/usb/host/xhci-dwc3.c
+exit_code=0
+
+$ git apply --check --whitespace=error-all patch-package/patches/0001-build-adaptation.patch
+exit_code=0
+
+$ git apply --whitespace=error-all patch-package/patches/0001-build-adaptation.patch
+exit_code=0
+
+$ git apply --check --whitespace=error-all patch-package/patches/0002-boot-compatibility.patch
+exit_code=0
+
+$ git apply --whitespace=error-all patch-package/patches/0002-boot-compatibility.patch
+exit_code=0
+
+$ git apply --check --whitespace=error-all patch-package/patches/0003-edp-assr.patch
+exit_code=0
+
+$ git apply --whitespace=error-all patch-package/patches/0003-edp-assr.patch
+exit_code=0
+
+$ git apply -R --check patch-package/patches/0003-edp-assr.patch
+exit_code=0
+
+$ git apply -R patch-package/patches/0003-edp-assr.patch
+exit_code=0
+
+$ git apply -R --check patch-package/patches/0002-boot-compatibility.patch
+exit_code=0
+
+$ git apply -R patch-package/patches/0002-boot-compatibility.patch
+patch-package/patches/0002-boot-compatibility.patch:69: trailing whitespace.
+		omgr.ini_section_ = argv[3];	
+patch-package/patches/0002-boot-compatibility.patch:76: trailing whitespace.
+		if(strstr(argv[3], "nullp") != NULL) {			
+warning: 2 lines add whitespace errors.
+exit_code=0
+
+$ git apply -R --check patch-package/patches/0001-build-adaptation.patch
+exit_code=0
+
+$ git apply -R patch-package/patches/0001-build-adaptation.patch
+exit_code=0
+
+$ git apply --check --whitespace=error-all patch-package/ulan-uboot-b3-all.patch
+exit_code=0
+
+$ git apply --whitespace=error-all patch-package/ulan-uboot-b3-all.patch
+exit_code=0
+
+$ git apply -R --check patch-package/ulan-uboot-b3-all.patch
+exit_code=0
+
+$ git apply -R patch-package/ulan-uboot-b3-all.patch
+patch-package/ulan-uboot-b3-all.patch:156: trailing whitespace.
+		omgr.ini_section_ = argv[3];	
+patch-package/ulan-uboot-b3-all.patch:163: trailing whitespace.
+		if(strstr(argv[3], "nullp") != NULL) {			
+warning: 2 lines add whitespace errors.
+exit_code=0
+
+$ patch --batch --forward --fuzz=0 --dry-run -p1 -i patch-package/ulan-uboot-b3-all.patch
+checking file Makefile
+checking file make.sh
+checking file arch/arm/mach-rockchip/decode_bl31.py
+checking file drivers/usb/host/xhci-dwc3.c
+checking file include/configs/evb_rk3588.h
+checking file configs/rk3588-yourland_defconfig
+checking file common/osl.c
+checking file drivers/core/of_access.c
+checking file drivers/video/drm/analogix_dp.c
+checking file drivers/video/drm/analogix_dp.h
+checking file drivers/video/drm/analogix_dp_reg.c
+checking file drivers/video/drm/rockchip_display.c
+exit_code=0
+
+$ patch --batch --forward --fuzz=0 -p1 -i patch-package/ulan-uboot-b3-all.patch
+patching file Makefile
+patching file make.sh
+patching file arch/arm/mach-rockchip/decode_bl31.py
+patching file drivers/usb/host/xhci-dwc3.c
+patching file include/configs/evb_rk3588.h
+patching file configs/rk3588-yourland_defconfig
+patching file common/osl.c
+patching file drivers/core/of_access.c
+patching file drivers/video/drm/analogix_dp.c
+patching file drivers/video/drm/analogix_dp.h
+patching file drivers/video/drm/analogix_dp_reg.c
+patching file drivers/video/drm/rockchip_display.c
+exit_code=0
+
+$ patch --batch --fuzz=0 -R -p1 -i patch-package/ulan-uboot-b3-all.patch
+patching file Makefile
+patching file make.sh
+patching file arch/arm/mach-rockchip/decode_bl31.py
+patching file drivers/usb/host/xhci-dwc3.c
+patching file include/configs/evb_rk3588.h
+patching file configs/rk3588-yourland_defconfig
+patching file common/osl.c
+patching file drivers/core/of_access.c
+patching file drivers/video/drm/analogix_dp.c
+patching file drivers/video/drm/analogix_dp.h
+patching file drivers/video/drm/analogix_dp_reg.c
+patching file drivers/video/drm/rockchip_display.c
+exit_code=0
+
+$ git apply --check --whitespace=error-all patch-package/patches/0003-edp-assr.patch
+exit_code=0
+
+$ git apply --whitespace=error-all patch-package/patches/0003-edp-assr.patch
+exit_code=0
+
+$ git apply -R patch-package/patches/0003-edp-assr.patch
+exit_code=0
+
+$ git apply --numstat patch-package/ulan-uboot-b3-all.patch
+2	2	Makefile
+3	3	make.sh
+1	1	arch/arm/mach-rockchip/decode_bl31.py
+4	3	drivers/usb/host/xhci-dwc3.c
+6	0	include/configs/evb_rk3588.h
+1	1	configs/rk3588-yourland_defconfig
+28	6	common/osl.c
+11	0	drivers/core/of_access.c
+50	0	drivers/video/drm/analogix_dp.c
+4	0	drivers/video/drm/analogix_dp.h
+16	0	drivers/video/drm/analogix_dp_reg.c
+27	6	drivers/video/drm/rockchip_display.c
+exit_code=0

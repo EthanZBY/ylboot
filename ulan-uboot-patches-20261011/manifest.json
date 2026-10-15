@@ -1,0 +1,127 @@
+{
+  "source_archive": {
+    "name": "uboot_youxi_202508_22.tar.gz",
+    "bytes": 925511680,
+    "format": "POSIX tar (not gzip)",
+    "sha256": "f402c0bded35720737fb2cd51ff5d915bcad06345e2e34a4b1019f10332ccb1a",
+    "source_root": "v2017.09-rk3588-taiyi",
+    "uboot_git_commit": null
+  },
+  "target": "B3 source used for the 2026-10-11 hardware validation",
+  "deployed_fit_sha256": "506be66f55a7f96ac7b9168f70789f1cd128852b11c32d5cc9589b4b5ab93a58",
+  "patch_order": [
+    "0001-build-adaptation.patch",
+    "0002-boot-compatibility.patch",
+    "0003-edp-assr.patch"
+  ],
+  "patch_files": {
+    "patches/0001-build-adaptation.patch": {
+      "sha256": "602340d1f065e948f4577b4c272d3d66ae499d86039ff4d5a273b594219dcb38",
+      "source_files": [
+        "Makefile",
+        "make.sh",
+        "arch/arm/mach-rockchip/decode_bl31.py",
+        "drivers/usb/host/xhci-dwc3.c"
+      ]
+    },
+    "patches/0002-boot-compatibility.patch": {
+      "sha256": "fc53ecfbdda1ed3e574f411ad8c3342cd4e93c14f4e6fbb844ecd0975a9e2121",
+      "source_files": [
+        "include/configs/evb_rk3588.h",
+        "configs/rk3588-yourland_defconfig",
+        "common/osl.c",
+        "drivers/core/of_access.c"
+      ]
+    },
+    "patches/0003-edp-assr.patch": {
+      "sha256": "050345cd5bb57611a10e43303381f767183d64dac2f058da2228907dd02c02df",
+      "source_files": [
+        "drivers/video/drm/analogix_dp.c",
+        "drivers/video/drm/analogix_dp.h",
+        "drivers/video/drm/analogix_dp_reg.c",
+        "drivers/video/drm/rockchip_display.c"
+      ]
+    }
+  },
+  "combined_patch": {
+    "name": "ulan-uboot-b3-all.patch",
+    "sha256": "2c772f940ee66795108f2fc9c36f1031ae1e5d7591fb32251e82bce21550404b"
+  },
+  "source_files": {
+    "Makefile": {
+      "before_sha256": "35670b26bbd68638f460f6ebf2542a913101d58afb19e29ad98e3668d54bc767",
+      "after_sha256": "beb8c1c491080ec8b62691912ef550a3a6cc83a2fd4d0dea3c7f4b0561d8015a",
+      "added": 2,
+      "deleted": 2
+    },
+    "make.sh": {
+      "before_sha256": "354b38ecf57cabe8f1c3074f0bd8b0259a4fc6d110e5a53ce2cc5989bb135e08",
+      "after_sha256": "bc8ed600c9eb3c12119ba15e2b067d41352269b209d97d201491d20a28b5a014",
+      "added": 3,
+      "deleted": 3
+    },
+    "arch/arm/mach-rockchip/decode_bl31.py": {
+      "before_sha256": "d2caf1f9469acde1ac99aad8b5e90a0d94a84c383ff0707212a9866e7be23e19",
+      "after_sha256": "12a4371db5f7985054d7220a6031cf3e6204fb8736a8ee9f1efd794fd66734bf",
+      "added": 1,
+      "deleted": 1
+    },
+    "drivers/usb/host/xhci-dwc3.c": {
+      "before_sha256": "d78f28ccc39152262ab89d0019919c9a770a63e43d19e0d147eb2bf9ef1d857f",
+      "after_sha256": "6344f54cb00fa6e81099f8a7005c3b7ed9d13e11aaab477c42e743018c52485f",
+      "added": 4,
+      "deleted": 3
+    },
+    "include/configs/evb_rk3588.h": {
+      "before_sha256": "f028ca7b288328aefbeb5a7212853947d49c4cfb55e348f43f4cccb79cd2eff5",
+      "after_sha256": "7bc732b1c37be7a3a043448c2314e53980e12e5819948456002a125fd2678359",
+      "added": 6,
+      "deleted": 0
+    },
+    "configs/rk3588-yourland_defconfig": {
+      "before_sha256": "bc2404000ffef223b7beb5d2a46a0fbc6b416cf044abf225056d05af38b7c2df",
+      "after_sha256": "e07f4c78cab017276813bc370ce4116f8522e64c9d669ca4d0bd81607de1633f",
+      "added": 1,
+      "deleted": 1
+    },
+    "common/osl.c": {
+      "before_sha256": "ac7780f77bd352c578fd6d452c2bc474a9f30f2ac8d5a151df4f9508fc585292",
+      "after_sha256": "1d4f47c14dbf4872ecc506480e8e058a15cbdf37ffee828191e3ebb564c5c874",
+      "added": 28,
+      "deleted": 6
+    },
+    "drivers/core/of_access.c": {
+      "before_sha256": "fae8bfeac841fa5af846167e4cd73abc1d78922520b1d990eb32a15d05e34d2b",
+      "after_sha256": "ed44237b408b09b8cd2973e8bfd1b6f032e1096215112e2e7b83480c182779bc",
+      "added": 11,
+      "deleted": 0
+    },
+    "drivers/video/drm/analogix_dp.c": {
+      "before_sha256": "e786cea4301f69a548d603df18130751014d25e86a134df56de299599755c388",
+      "after_sha256": "ba88d279da19b8f5be5a63f35609f63fd27ad3811a6599abd4615854edb7e23e",
+      "added": 50,
+      "deleted": 0
+    },
+    "drivers/video/drm/analogix_dp.h": {
+      "before_sha256": "55dd603a197ccca73f70df13c002967bf04ae601640268d0e3c18d6b2064cb0b",
+      "after_sha256": "63f931f15cf53f1b44b60643fd34f1533afd40749d20e88ce4204b36b7ffcba2",
+      "added": 4,
+      "deleted": 0
+    },
+    "drivers/video/drm/analogix_dp_reg.c": {
+      "before_sha256": "25c76310359d59f24b0eab82b3a0d0d628323b6e3047f0b6e5699afb9774e7ec",
+      "after_sha256": "596c839df23e1fa23435fbe3b4ea88733ad8148fed4b3a5d629632723fbf5860",
+      "added": 16,
+      "deleted": 0
+    },
+    "drivers/video/drm/rockchip_display.c": {
+      "before_sha256": "9274944bd08af8294e8b8d2fd3b5c0de8dc32deec9d6da82d2d7798168fb5153",
+      "after_sha256": "affdaeb8f4cbf9260117c7f90998a91f100786261e06d97fc9a483817fad473d",
+      "added": 27,
+      "deleted": 6
+    }
+  },
+  "total_files": 12,
+  "total_added": 153,
+  "total_deleted": 22
+}
