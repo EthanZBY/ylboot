@@ -147,13 +147,27 @@ static int passwd_abort(uint64_t etime)
 	 */
 	do {
 		if (tstc()) {
+			int c = getc();
+
+			/*
+			 * round 3c: Esc, or the first byte of an arrow key
+			 * (ESC [ A), opens the boot menu. Drop the rest of an
+			 * escape sequence so the menu does not read it.
+			 */
+			if (c == 0x1b) {
+				mdelay(20);
+				while (tstc())
+					(void)getc();
+				return 2;
+			}
+
 			if (presskey_len < presskey_max) {
-				presskey[presskey_len++] = getc();
+				presskey[presskey_len++] = c;
 			} else {
 				for (i = 0; i < presskey_max - 1; i++)
 					presskey[i] = presskey[i + 1];
 
-				presskey[i] = getc();
+				presskey[i] = c;
 			}
 		}
 
@@ -182,6 +196,7 @@ static int passwd_abort(uint64_t etime)
 /***************************************************************************
  * Watch for 'delay' seconds for autoboot stop or autoboot delay string.
  * returns: 0 -  no key string, allow autoboot 1 - got key string, abort
+ *          2 - Esc (round 3c), open the boot menu
  */
 static int __abortboot(int bootdelay)
 {
@@ -352,17 +367,28 @@ void autoboot_command(const char *s)
 {
 	debug("### main_loop: bootcmd=\"%s\"\n", s ? s : "<UNDEFINED>");
 
-	if (stored_bootdelay != -1 && s && !abortboot(stored_bootdelay)) {
+	if (stored_bootdelay != -1 && s) {
+		int abort;
+
+		/* round 3c: the laptop keyboard and the screen before the countdown */
+		osl_countdown_input();
+		abort = abortboot(stored_bootdelay);
+		if (abort == 2) {	/* round 3c: Esc opens the boot menu */
+			menu_show(30);
+			return;
+		}
+		if (!abort) {
 #if defined(CONFIG_AUTOBOOT_KEYED) && !defined(CONFIG_AUTOBOOT_KEYED_CTRLC)
-		int prev = disable_ctrlc(1);	/* disable Control C checking */
+			int prev = disable_ctrlc(1);	/* disable Control C checking */
 #endif
 
-		run_command_list(s, -1, 0);
-		autoboot_command_fail_handle();
+			run_command_list(s, -1, 0);
+			autoboot_command_fail_handle();
 
 #if defined(CONFIG_AUTOBOOT_KEYED) && !defined(CONFIG_AUTOBOOT_KEYED_CTRLC)
-		disable_ctrlc(prev);	/* restore Control C checking */
+			disable_ctrlc(prev);	/* restore Control C checking */
 #endif
+		}
 	}
 
 #ifdef CONFIG_MENUKEY

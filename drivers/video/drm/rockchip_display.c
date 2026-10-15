@@ -356,6 +356,32 @@ static unsigned long get_display_size(void)
 	return memory_end - memory_start;
 }
 
+/*
+ * round 3d: when the window shows the screen console, its framebuffer goes to the kernel as the boot logo, so the
+ * last U-Boot screen stays until the kernel's own console. rockchip_display_fixup() decides for the device tree it
+ * fixes up; board_quiesce_devices() asks for the device tree it boots.
+ */
+static const void *fb_handover_blob;
+
+int rockchip_display_fb_handed_over(const void *blob)
+{
+	return fb_handover_blob && fb_handover_blob == blob;
+}
+
+/*
+ * The screen console off before the kernel, when the kernel does not take its framebuffer over. Moved here from
+ * arch_preboot_os() (round 2, 2026-10-11): left on, the VOP keeps scanning memory the kernel neither reserves nor
+ * maps, and floods with POST_BUF_EMPTY and IOMMU faults. The proven manual fix: coninfo x; mw.l 0xfdd91c10 0;
+ * mw.l 0xfdd90000 0x48004.
+ */
+void rockchip_display_console_off(void)
+{
+	gd->flags &= ~GD_FLG_SERIAL_READY;	/* coninfo x: LCD console off, serial output continues */
+	writel(0, 0xfdd91c10);			/* mw.l 0xfdd91c10 0: Esmart2 window off */
+	writel(0x48004, 0xfdd90000);		/* mw.l 0xfdd90000 0x48004: VOP2 config done */
+	printf("LCD console off before the kernel: Esmart2 ctrl %08x\n", readl(0xfdd91c10));
+}
+
 static unsigned long get_single_cubic_lut_size(void)
 {
 	ulong cubic_lut_size;
@@ -2075,8 +2101,43 @@ void rockchip_display_fixup(void *blob)
 	int offset;
 	const struct device_node *np;
 	const char *path;
+	ulong fb_base = memory_start - (DRM_ROCKCHIP_FB_SIZE);
+	ulong logo_base = memory_start;
+	const char *handover = env_get("ulan_fb_handover");
+	bool console_on = gd->flags & GD_FLG_SERIAL_READY;
 
-	if (fdt_node_offset_by_compatible(blob, 0, "rockchip,drm-logo") >= 0) {
+	/*
+	 * round 3d: hand the screen console's framebuffer to the kernel when the one display shows it. The kernel then
+	 * reserves it, maps it 1:1 and shows it until its own console. "setenv ulan_fb_handover no" keeps round 2.
+	 */
+	fb_handover_blob = NULL;
+	if (console_on && !(handover && !strcmp(handover, "no")) &&
+	    list_is_singular(&rockchip_display_list) &&
+	    fdt_node_offset_by_compatible(blob, 0, "rockchip,drm-logo") >= 0) {
+		s = list_first_entry(&rockchip_display_list, struct display_state, head);
+		if (s->logo.mem == (char *)fb_base && !s->logo.offset) {
+			ulong size = roundup(memory_end, PAGE_SIZE) - fb_base;
+
+			if (fdt_update_reserved_memory(blob, "rockchip,drm-logo",
+						       (u64)fb_base, (u64)size) >= 0) {
+				fb_handover_blob = blob;
+				logo_base = fb_base;
+				printf("ulan: the console framebuffer 0x%lx (0x%lx bytes) goes to the kernel\n",
+				       fb_base, size);
+			}
+		}
+	}
+	if (console_on && !fb_handover_blob)
+		rockchip_display_console_off();	/* before the logo work below, as round 2 did */
+
+	if (fb_handover_blob) {
+		/* no kernel logo: the kernel keeps showing the console until its own */
+		offset = fdt_update_reserved_memory(blob, "rockchip,drm-cubic-lut",
+						    (u64)cubic_lut_memory_start,
+						    (u64)get_cubic_memory_size());
+		if (offset < 0)
+			printf("failed to reserve drm-cubic-lut memory\n");
+	} else if (fdt_node_offset_by_compatible(blob, 0, "rockchip,drm-logo") >= 0) {
 		list_for_each_entry(s, &rockchip_display_list, head)
 			load_bmp_logo(&s->logo, s->klogo_name,NULL);
 
@@ -2141,7 +2202,7 @@ void rockchip_display_fixup(void *blob)
 		do_fixup_by_path_u32(blob, path, name, val, 1);
 
 		offset = s->logo.offset + (u32)(unsigned long)s->logo.mem
-			 - memory_start;
+			 - logo_base;
 		FDT_SET_U32("logo,offset", offset);
 		FDT_SET_U32("logo,width", s->logo.width);
 		FDT_SET_U32("logo,height", s->logo.height);
